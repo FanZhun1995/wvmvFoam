@@ -545,43 +545,6 @@ volVectorField bodyForce
             }
         }
 
-    //考虑初始转角的影响
-    // Perform rotation turbine by turbine.
-    forAll(uvShaft, i)
-    {	
-        // Check the rotation direction first and set the local delta azimuth
-	// variable accordingly.
-	scalar deltaAzimuthI = 0.0;//定义标量旋转角度
-	if (rotationDir[i] == "cw")//判断旋转方向，cw为顺时针
-	{
-            deltaAzimuthI =  deltaAzimuth[i];
-        }
-	if (rotationDir[i] == "ccw")
-	{
-            deltaAzimuthI = -deltaAzimuth[i];
-        }
-
-	// Rotate turbine blades, blade by blade, point by point.
-	forAll(bladePoints[i], j)//对所有叶片坐标点进行旋转操作，叶片点新坐标=旋转点函数（叶片旧坐标，旋转中心，轴向单位向量，旋转角度）
-        {
-            forAll(bladePoints[i][j], k)
-            {
-                bladePoints[i][j][k] = rotatePoint(bladePoints[i][j][k], rotorApex[i], uvShaft[i], deltaAzimuthI);
-            }
-        }   
-
-
-	// Calculate the new azimuth angle and make sure it isn't
-        // bigger than 2*pi.
-        if (pastFirstTimeStep)
-        {
-	    azimuth[i] = azimuth[i] + deltaAzimuth[i];//更新转角，并将转角控制在2pi以内
-            if (azimuth[i] >= 2.0 * Foam::constant::mathematical::pi)
-            {
-                azimuth[i] -= 2.0 * Foam::constant::mathematical::pi;
-            }
-        }
-    }
 
         // Generate randome numbers for the blade point perturbation during control
         // processor identification.  This does not affect the actual location--it is
@@ -653,14 +616,12 @@ volVectorField bodyForce
 
 
     // Yaw the nacelle to initial position.
-    deltaNacYaw = nacYaw;
-//    yawNacelle();
+    
 
-//    Info << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA " << endl;
-/*    //依次对每个风机进行偏航控制操作
+    //依次对每个风机进行偏航控制操作
+    deltaNacYaw = nacYaw;
     forAll(uvTower, i)
     {
-    Info << "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB " << endl;
 	//将叶轮中心进行偏航旋转，叶轮中心新坐标=旋转点函数（叶轮中心旧坐标，旋转中心(塔架与机舱中轴交点)，转轴(塔架方向向量)，旋转角度）
         rotorApex[i] = rotatePoint(rotorApex[i], towerShaftIntersect[i], uvTower[i], deltaNacYaw[i]);
 
@@ -671,10 +632,8 @@ volVectorField bodyForce
 	//将所有叶片上的制动点坐标进行更新
 	forAll(bladePoints[i], j)
         {
-    Info << "CCCCCCCCCCCCCCCCCCCCCCCCCCCC " << endl;
             forAll(bladePoints[i][j], k)
             {
-    Info << "dddddddddddddddddddddddddddddddd " << endl;
                 bladePoints[i][j][k] = rotatePoint(bladePoints[i][j][k], towerShaftIntersect[i], uvTower[i], deltaNacYaw[i]);
             }
         }   
@@ -682,7 +641,6 @@ volVectorField bodyForce
 	//跟新偏航角，并将偏航角控制在2pi以内
         if (pastFirstTimeStep)
         {
-    Info << "EEEEEEEEEEEEEEEEEE " << endl;
 	    nacYaw[i] = nacYaw[i] + deltaNacYaw[i];
             if (nacYaw[i] >= 2.0 * Foam::constant::mathematical::pi)
             {
@@ -690,11 +648,50 @@ volVectorField bodyForce
             }
         }
     }
-    Info << "FFFFFFFFFFFFFFFFFFFFFFFF " << endl;
-*/
-    // Rotate the rotor to initial azimuth angle.
+
+
+    //考虑初始转角的影响
+    // Perform rotation turbine by turbine.
     deltaAzimuth =  azimuth;
-/*    rotateBlades();  
+    forAll(uvShaft, i)
+    {	
+        // Check the rotation direction first and set the local delta azimuth
+	// variable accordingly.
+	scalar deltaAzimuthI = 0.0;//定义标量旋转角度
+	if (rotationDir[i] == "cw")//判断旋转方向，cw为顺时针
+	{
+            deltaAzimuthI =  deltaAzimuth[i];
+        }
+	if (rotationDir[i] == "ccw")
+	{
+            deltaAzimuthI = -deltaAzimuth[i];
+        }
+
+	// Rotate turbine blades, blade by blade, point by point.
+	forAll(bladePoints[i], j)//对所有叶片坐标点进行旋转操作，叶片点新坐标=旋转点函数（叶片旧坐标，旋转中心，轴向单位向量，旋转角度）
+        {
+            forAll(bladePoints[i][j], k)
+            {
+                bladePoints[i][j][k] = rotatePoint(bladePoints[i][j][k], rotorApex[i], uvShaft[i], deltaAzimuthI);
+            }
+        }   
+
+
+	// Calculate the new azimuth angle and make sure it isn't
+        // bigger than 2*pi.
+        if (pastFirstTimeStep)
+        {
+	    azimuth[i] = azimuth[i] + deltaAzimuth[i];//更新转角，并将转角控制在2pi以内
+            if (azimuth[i] >= 2.0 * Foam::constant::mathematical::pi)
+            {
+                azimuth[i] -= 2.0 * Foam::constant::mathematical::pi;
+            }
+        }
+    }
+
+/*
+    // Rotate the rotor to initial azimuth angle.
+    rotateBlades();  
 
     // Find out which processors control each actuator line point.
     findControlProcNo();
